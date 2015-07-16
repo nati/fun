@@ -16,8 +16,9 @@ func TestReadRLE(t *testing.T) {
 func TestBitMap(t *testing.T) {
 	size := 1000
 	bitmap := NewBitMap(size, size)
-	for i := 0; i < size; i++ {
-		for j := 0; j < size; j++ {
+	var i, j uint64
+	for i = 0; i < uint64(size); i++ {
+		for j = 0; j < uint64(size); j++ {
 			bitmap.Set(i, j, true)
 			if !bitmap.Get(i, j) {
 				t.Error("should be true %d %d", i, j)

@@ -5,9 +5,7 @@ import (
 	"image"
 	"image/color"
 	"io/ioutil"
-	"math/rand"
 	"strconv"
-	"sync"
 )
 
 //Map uint64erface represents map
@@ -16,48 +14,6 @@ type Map interface {
 	Set(x, y uint64, flag bool)
 	Width() uint64
 	Height() uint64
-}
-
-//ArrayMap is array based impl for Map
-type ArrayMap struct {
-	width  uint64
-	height uint64
-	BitMap [][]bool
-}
-
-//NewArrayMap creates ArrayMap
-func NewArrayMap(width, height int) Map {
-	width += 2
-	height += 2
-	var bitmap = make([][]bool, height)
-	for i := 0; i < height; i++ {
-		bitmap[i] = make([]bool, width)
-	}
-	return &ArrayMap{
-		width:  uint64(width),
-		height: uint64(height),
-		BitMap: bitmap,
-	}
-}
-
-//Get flag
-func (m *ArrayMap) Get(x, y uint64) bool {
-	return m.BitMap[y][x]
-}
-
-//Set flag
-func (m *ArrayMap) Set(x, y uint64, flag bool) {
-	m.BitMap[y][x] = flag
-}
-
-//Width return width
-func (m *ArrayMap) Width() uint64 {
-	return m.width - 2
-}
-
-//Height return height
-func (m *ArrayMap) Height() uint64 {
-	return m.height - 2
 }
 
 //BitMap is bitmap based impl for Map
@@ -159,31 +115,6 @@ func Next(currentState, nextState Map) {
 		for y = 1; y <= currentState.Height(); y++ {
 			nextState.Set(x, y, NextState(x, y, currentState))
 		}
-	}
-}
-
-//NextParallel compute next state for next map
-func NextParallel(currentState, nextState Map) {
-	var wg sync.WaitGroup
-	var x, y uint64
-	for x = 1; x <= currentState.Width(); x++ {
-		wg.Add(1)
-		go func(x uint64) {
-			for y = 1; y <= currentState.Height(); y++ {
-				nextState.Set(x, y, NextState(x, y, currentState))
-			}
-			wg.Done()
-		}(x)
-	}
-	wg.Wait()
-}
-
-//RandomPoints set num of true
-func RandomPoints(m Map, num int) {
-	for i := 0; i < num; i++ {
-		x := rand.Intn(int(m.Width()))
-		y := rand.Intn(int(m.Height()))
-		m.Set(uint64(x), uint64(y), true)
 	}
 }
 

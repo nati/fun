@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/google/gxui"
 	"github.com/google/gxui/drivers/gl"
@@ -8,72 +9,53 @@ import (
 	"github.com/google/gxui/themes/dark"
 	"github.com/nati/fun/lifegame/lifegame"
 	"image"
-	"math/rand"
-	"sync"
+	"os"
 	"time"
 )
 
 func appMain(driver gxui.Driver) {
+	args := flag.Args()
+	if len(args) != 1 {
+		fmt.Print("usage: lifegame rle_file_path\n")
+		os.Exit(1)
+	}
+	file := args[0]
+
 	theme := dark.CreateTheme(driver)
 
 	wSize := 500
-	hSize := 250
-	window := theme.CreateWindow(1000, 500, "LifeGame")
+	hSize := 500
+	window := theme.CreateWindow(1000, 1000, "LifeGame")
 	window.SetScale(flags.DefaultScaleFactor)
 
 	canvasImage := theme.CreateImage()
 	window.AddChild(canvasImage)
 	ticker := time.NewTicker(time.Millisecond * 30)
 
-	noise := 0
-	addNoise := false
 	maps := [2]lifegame.Map{
 		lifegame.NewBitMap(wSize, hSize),
 		lifegame.NewBitMap(wSize, hSize),
 	}
-	//maps := [2]lifegame.Map{
-	//	lifegame.NewArrayMap(size, size),
-	//	lifegame.NewArrayMap(size, size),
-	//}
 
 	fmt.Println("Start lifegame")
-	lifegame.ReadRLE("./broken-lines.rle", maps[0])
+	lifegame.ReadRLE(file, maps[0])
 
 	go func() {
 		i := 0
 		for _ = range ticker.C {
 			currentState := maps[i%2]
 			nextState := maps[(i+1)%2]
-			var wg sync.WaitGroup
-			wg.Add(1)
-			go func() {
-				start := time.Now()
-				//lifegame.NextParallel(currentState, nextState)
-				lifegame.Next(currentState, nextState)
-				elasped := time.Since(start)
-				fmt.Printf("elasped %s \n", elasped)
-				if addNoise {
-					if i < 50 {
-						lifegame.RandomPoints(nextState, rand.Intn(noise*100))
-					} else {
-						lifegame.RandomPoints(nextState, rand.Intn(noise+1))
-					}
-				}
-				wg.Done()
-			}()
-			wg.Add(1)
-			go func() {
-				driver.Call(func() {
-					rgba := image.NewRGBA(image.Rect(0, 0, wSize, hSize))
-					lifegame.DrawMap(rgba, currentState)
-					texture := driver.CreateTexture(rgba, 0.5)
-					canvasImage.SetTexture(texture)
-					wg.Done()
-				})
-			}()
-			wg.Wait()
+			start := time.Now()
+			lifegame.Next(currentState, nextState)
+			elasped := time.Since(start)
+			fmt.Printf("elasped %s \n", elasped)
+			driver.Call(func() {
+				rgba := image.NewRGBA(image.Rect(0, 0, wSize, hSize))
+				lifegame.DrawMap(rgba, currentState)
+				texture := driver.CreateTexture(rgba, 0.5)
+				canvasImage.SetTexture(texture)
+			})
 			i++
-
 		}
 	}()
 
