@@ -1,0 +1,3 @@
+[submodule "go_javascript/octane-benchmark"]
+	path = go_javascript/octane-benchmark
+	url = https://github.com/chromium/octane-benchmark.git
