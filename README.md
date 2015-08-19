@@ -3,4 +3,9 @@ fun
 
 My fun project! have fun!
 
-python cube.py
+How to send review
+-------------------
+
+pip install git-review
+
+git review
