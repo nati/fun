@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/dop251/otto"
-	"github.com/ry/v8worker"
 	"io/ioutil"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/dop251/otto"
+	"github.com/ry/v8worker"
 )
 
 func main() {
@@ -75,7 +76,7 @@ func benchmarkV8Worker(benchmarks []string) {
 	log.Println("benchmark v8Worker\n")
 	worker := v8worker.New(func(msg string) {
 		log.Printf("message: %s \n", msg)
-	})
+	}, nil)
 	for _, source := range benchmarks {
 		worker.Load(source, mustReadFile(source))
 	}
@@ -88,13 +89,13 @@ func benchmarkOttoParallel() {
 	var wg sync.WaitGroup
 	now := time.Now()
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 8; i++ {
 		wg.Add(1)
 		go func() {
 			vm := otto.New()
 			source := `
 		var sum = 0;
-		for(var i = 0 ; i < 10000 ; i++){
+		for(var i = 0 ; i < 10000000 ; i++){
 			sum++;
 		}
 	`
@@ -110,21 +111,21 @@ func benchmarkV8WorkerParallel() {
 	fmt.Println("v8 parallel test")
 	var wg sync.WaitGroup
 	now := time.Now()
-	worker := v8worker.New(func(msg string) {
-		log.Printf("message: %s \n", msg)
-	})
-	source := `
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			worker := v8worker.New(func(msg string) {
+				log.Printf("message: %s \n", msg)
+			}, nil)
+			source := `
 	$recv(function(msg) {
 		var sum = 0;
-		for(var i = 0 ; i < 10000 ; i++){
+		for(var i = 0 ; i < 10000000 ; i++){
 			sum++;
 		}
     });
 	`
-	worker.Load("test", source)
-	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go func() {
+			worker.Load("test", source)
 			worker.Send("test")
 			wg.Done()
 		}()
@@ -137,11 +138,11 @@ func benchmarkGolangParallel() {
 	fmt.Println("golang parallel test")
 	var wg sync.WaitGroup
 	now := time.Now()
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 8; i++ {
 		wg.Add(1)
 		go func() {
 			sum := 0
-			for j := 0; j < 10000; j++ {
+			for j := 0; j < 10000000; j++ {
 				sum++
 			}
 			wg.Done()
